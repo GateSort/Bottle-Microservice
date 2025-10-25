@@ -32,7 +32,7 @@ def predict_bottle_fill(model, img_path, class_names):
 
 @app.route('/')
 def home():
-    return jsonify({"message": "API de procesamiento de imágenes con Flask y TensorFlow"})
+    return "API de procesamiento de imágenes con Flask y TensorFlow"
 
 @app.route('/predict', methods=['POST'])
 def predict():
