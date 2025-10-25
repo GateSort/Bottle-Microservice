@@ -1,13 +1,12 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from tensorflow import keras
 import numpy as np
-from PIL import Image
-import io
-import os
 import tempfile
-
+import os
 
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 # --- Model and config ---
 img_height, img_width = 150, 150

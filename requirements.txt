@@ -5,10 +5,12 @@ certifi==2025.10.5
 charset-normalizer==3.4.4
 click==8.3.0
 Flask==3.1.2
+flask-cors==6.0.1
 flatbuffers==25.9.23
 gast==0.6.0
 google-pasta==0.2.0
 grpcio==1.76.0
+gunicorn==23.0.0
 h5py==3.15.1
 idna==3.11
 itsdangerous==2.2.0
@@ -25,6 +27,7 @@ numpy==1.26.4
 opt_einsum==3.4.0
 optree==0.17.0
 packaging==25.0
+pillow==12.0.0
 protobuf==4.25.8
 Pygments==2.19.2
 requests==2.32.5
