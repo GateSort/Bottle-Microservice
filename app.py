@@ -34,6 +34,14 @@ def predict_bottle_fill(model, img_path, class_names):
 def home():
     return "API de procesamiento de imágenes con Flask y TensorFlow"
 
+@app.route('/health', methods=['GET'])
+def health():
+    return jsonify({
+        'status': 'healthy',
+        'model_loaded': model is not None,
+        'service': 'bottle-classification'
+    }), 200
+
 @app.route('/predict', methods=['POST'])
 def predict():
     # Retrieve multiple images from the request
@@ -74,4 +82,4 @@ def predict():
 
 if __name__ == '__main__':
     os.makedirs('uploads', exist_ok=True)
-    app.run(debug=True)
+    app.run(debug=True, port=3001)
