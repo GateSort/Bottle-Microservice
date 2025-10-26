@@ -4,7 +4,8 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from tensorflow import keras
 from bottle_prediction import predict_bottle_fill_batch
-from sticker_prediction import get_sticker_predictions, get_counts_as_json
+from sticker_prediction import get_sticker_predictions
+from helpers import get_counts_as_json
 import tempfile
 import os
 import json
@@ -17,7 +18,7 @@ img_height, img_width = 150, 150
 class_names = ['full', 'medium', 'empty']
 
 # Load your trained model once at startup
-model = keras.models.load_model("models/classifier_v1.keras")
+model = keras.models.load_model("models/classifier_v2.keras")
 
 # --- Your prediction function ---
 @app.route('/')
