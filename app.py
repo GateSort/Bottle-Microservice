@@ -10,7 +10,7 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 
 # --- Model and config ---
 img_height, img_width = 150, 150
-class_names = ['Full Water Level', 'Half Water Level', 'Overflowing']
+class_names = ['full', 'medium', 'empty']
 
 # Load your trained model once at startup
 model = keras.models.load_model("models/classifier_v1.keras")
@@ -24,11 +24,36 @@ def predict_bottle_fill(model, img_path, class_names):
     img_array = keras.utils.img_to_array(img)
     img_array = np.expand_dims(img_array, 0)  # Add batch dimension
 
-    predictions = model.predict(img_array)
+    predictions = model.predict(img_array, verbose=0)
     predicted_index = np.argmax(predictions[0])
     confidence = float(np.max(keras.activations.softmax(predictions[0])))
 
     return class_names[predicted_index], confidence
+
+def predict_bottle_fill_batch(model, img_paths, class_names):
+    """
+    Takes a list of image paths and returns predictions for all images in a single batch.
+    This is much faster than predicting images one at a time.
+    """
+    img_arrays = []
+    for img_path in img_paths:
+        img = keras.utils.load_img(img_path, target_size=(img_height, img_width))
+        img_array = keras.utils.img_to_array(img)
+        img_arrays.append(img_array)
+    
+    # Stack all images into a single batch
+    batch = np.stack(img_arrays, axis=0)
+    
+    # Single prediction call for all images
+    predictions = model.predict(batch, verbose=0)
+    
+    results = []
+    for pred in predictions:
+        predicted_index = np.argmax(pred)
+        confidence = float(np.max(keras.activations.softmax(pred)))
+        results.append((class_names[predicted_index], confidence))
+    
+    return results
 
 @app.route('/')
 def home():
@@ -50,9 +75,11 @@ def predict():
     if not files or len(files) == 0:
         return jsonify({'error': 'No images uploaded'}), 400
 
-    results = []
+    tmp_paths = []
+    file_names = []
 
     try:
+        # Save all files first
         for file in files:
             if file.filename == '':
                 continue
@@ -60,25 +87,33 @@ def predict():
             # Save uploaded image temporarily
             with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
                 file.save(tmp.name)
-                tmp_path = tmp.name
+                tmp_paths.append(tmp.name)
+                file_names.append(file.filename)
 
-            # Run prediction
-            predicted_class, confidence = predict_bottle_fill(model, tmp_path, class_names)
+        # Batch predict all images at once (much faster)
+        predictions = predict_bottle_fill_batch(model, tmp_paths, class_names)
 
-            # Store result
-            results.append({
-                'file_name': file.filename,
-                'predicted_class': predicted_class,
-                'confidence': confidence
-            })
-
-            # Delete temp file
-            os.remove(tmp_path)
+        # Format results
+        results = [
+            {
+                'file_name': file_names[i],
+                'predicted_class': pred[0],
+                'confidence': pred[1]
+            }
+            for i, pred in enumerate(predictions)
+        ]
 
         return jsonify({'predictions': results})
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    finally:
+        # Clean up temp files
+        for tmp_path in tmp_paths:
+            try:
+                os.remove(tmp_path)
+            except:
+                pass
 
 if __name__ == '__main__':
     os.makedirs('uploads', exist_ok=True)
