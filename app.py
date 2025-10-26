@@ -1,9 +1,13 @@
+import os
 from flask import Flask, request, jsonify
+
 from flask_cors import CORS
 from tensorflow import keras
-import numpy as np
+from bottle_prediction import predict_bottle_fill_batch
+from sticker_prediction import get_sticker_predictions, get_counts_as_json
 import tempfile
 import os
+import json
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -16,45 +20,6 @@ class_names = ['full', 'medium', 'empty']
 model = keras.models.load_model("models/classifier_v1.keras")
 
 # --- Your prediction function ---
-def predict_bottle_fill(model, img_path, class_names):
-    """
-    Takes an image path and returns the predicted fill level.
-    """
-    img = keras.utils.load_img(img_path, target_size=(img_height, img_width))
-    img_array = keras.utils.img_to_array(img)
-    img_array = np.expand_dims(img_array, 0)  # Add batch dimension
-
-    predictions = model.predict(img_array, verbose=0)
-    predicted_index = np.argmax(predictions[0])
-    confidence = float(np.max(keras.activations.softmax(predictions[0])))
-
-    return class_names[predicted_index], confidence
-
-def predict_bottle_fill_batch(model, img_paths, class_names):
-    """
-    Takes a list of image paths and returns predictions for all images in a single batch.
-    This is much faster than predicting images one at a time.
-    """
-    img_arrays = []
-    for img_path in img_paths:
-        img = keras.utils.load_img(img_path, target_size=(img_height, img_width))
-        img_array = keras.utils.img_to_array(img)
-        img_arrays.append(img_array)
-    
-    # Stack all images into a single batch
-    batch = np.stack(img_arrays, axis=0)
-    
-    # Single prediction call for all images
-    predictions = model.predict(batch, verbose=0)
-    
-    results = []
-    for pred in predictions:
-        predicted_index = np.argmax(pred)
-        confidence = float(np.max(keras.activations.softmax(pred)))
-        results.append((class_names[predicted_index], confidence))
-    
-    return results
-
 @app.route('/')
 def home():
     return "API de procesamiento de imágenes con Flask y TensorFlow"
@@ -110,6 +75,44 @@ def predict():
     finally:
         # Clean up temp files
         for tmp_path in tmp_paths:
+            try:
+                os.remove(tmp_path)
+            except:
+                pass
+
+@app.route('/stickers', methods=['POST'])
+def stickers():
+    # Get single image from request
+    if 'image' not in request.files:
+        return jsonify({'error': 'No image file provided'}), 400
+
+    file = request.files['image']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+
+    tmp_path = None
+    try:
+        # Save uploaded image temporarily
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
+            file.save(tmp.name)
+            tmp_path = tmp.name
+
+        # Detect stickers in the image
+        results = get_sticker_predictions()
+        
+        # Get counts in JSON format
+        counts_json = get_counts_as_json(results)
+        
+        # Parse the JSON string back to a dictionary
+        response_data = json.loads(counts_json)
+                
+        return jsonify(response_data)
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        # Clean up temp file
+        if tmp_path:
             try:
                 os.remove(tmp_path)
             except:

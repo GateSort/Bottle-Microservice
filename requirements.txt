@@ -1,3 +1,4 @@
+
 absl-py==2.3.1
 astunparse==1.6.3
 blinker==1.9.0
@@ -15,6 +16,7 @@ h5py==3.15.1
 idna==3.11
 itsdangerous==2.2.0
 Jinja2==3.1.6
+joblib==1.5.2
 keras==3.11.3
 libclang==18.1.1
 Markdown==3.9
@@ -23,7 +25,7 @@ MarkupSafe==3.0.3
 mdurl==0.1.2
 ml-dtypes==0.3.2
 namex==0.1.0
-numpy==1.26.4
+opencv-python==4.10.0.84
 opt_einsum==3.4.0
 optree==0.17.0
 packaging==25.0
@@ -32,12 +34,15 @@ protobuf==4.25.8
 Pygments==2.19.2
 requests==2.32.5
 rich==14.2.0
+scikit-learn==1.7.2
+scipy==1.16.2
 setuptools==80.9.0
 six==1.17.0
 tensorboard==2.16.2
 tensorboard-data-server==0.7.2
 tensorflow==2.16.2
 termcolor==3.1.0
+threadpoolctl==3.6.0
 typing_extensions==4.15.0
 urllib3==2.5.0
 Werkzeug==3.1.3
